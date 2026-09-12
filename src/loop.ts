@@ -20,6 +20,7 @@ export interface RunTurnOptions {
   history: Message[];
   ctx: ToolContext;
   events?: LoopEvents;
+  maxIterations?: number;
 }
 
 /**
@@ -29,12 +30,13 @@ export interface RunTurnOptions {
  */
 export async function runTurn(userMessage: string, options: RunTurnOptions): Promise<string> {
   const { provider, tools, history, ctx, events } = options;
+  const maxIterations = options.maxIterations ?? MAX_ITERATIONS;
   history.push({ role: 'user', content: userMessage });
 
   let previousCall: ToolCall | undefined;
   let repeatCount = 0;
 
-  for (let iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
+  for (let iteration = 0; iteration < maxIterations; iteration++) {
     const reply: ModelReply = await provider.chat(history, tools, ctx.signal);
 
     if (reply.kind === 'text') {
@@ -61,7 +63,7 @@ export async function runTurn(userMessage: string, options: RunTurnOptions): Pro
     }
   }
 
-  throw new LoopLimitError(`Reached the maximum of ${MAX_ITERATIONS} tool-use iterations without a final answer.`);
+  throw new LoopLimitError(`Reached the maximum of ${maxIterations} tool-use iterations without a final answer.`);
 }
 
 async function executeToolCall(

@@ -1,8 +1,13 @@
 import { listFilesTool, readFileTool, writeFileTool } from './fs.js';
-import { runCommandTool } from './shell.js';
+import { createRunCommandTool, runCommandTool } from './shell.js';
 import type { JSONSchema, Tool } from './types.js';
 
 export const tools: Tool[] = [listFilesTool, readFileTool, writeFileTool, runCommandTool];
+
+/** Builds the tool set with run_command's timeout taken from the user's config. */
+export function buildTools(commandTimeoutMs: number): Tool[] {
+  return [listFilesTool, readFileTool, writeFileTool, createRunCommandTool(commandTimeoutMs)];
+}
 
 export class ToolValidationError extends Error {}
 

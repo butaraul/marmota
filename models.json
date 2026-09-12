@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "providers": [
+    {
+      "id": "ollama",
+      "label": "Local (Ollama)",
+      "needsKey": false,
+      "baseUrl": "http://localhost:11434/v1",
+      "detect": "http://localhost:11434/api/tags",
+      "models": []
+    },
+    {
+      "id": "groq",
+      "label": "Groq -- free tier, very fast",
+      "needsKey": true,
+      "keyUrl": "https://console.groq.com/keys",
+      "baseUrl": "https://api.groq.com/openai/v1",
+      "verifiedAt": "2026-09-12",
+      "models": [
+        {
+          "id": "openai/gpt-oss-120b",
+          "label": "GPT-OSS 120B",
+          "note": "good default -- free tier, verified tool-calling support"
+        },
+        {
+          "id": "openai/gpt-oss-20b",
+          "label": "GPT-OSS 20B",
+          "note": "smaller and faster, free tier"
+        },
+        {
+          "id": "qwen/qwen3.6-27b",
+          "label": "Qwen3.6 27B",
+          "note": "preview model, free tier"
+        }
+      ]
+    },
+    {
+      "id": "openrouter",
+      "label": "OpenRouter -- free tier, no card required",
+      "needsKey": true,
+      "keyUrl": "https://openrouter.ai/keys",
+      "baseUrl": "https://openrouter.ai/api/v1",
+      "verifiedAt": "2026-09-12",
+      "models": [
+        {
+          "id": "nvidia/nemotron-3-super-120b-a12b:free",
+          "label": "Nemotron 3 Super 120B (free)",
+          "note": "good default -- verified tool-calling support"
+        }
+      ]
+    }
+  ]
+}

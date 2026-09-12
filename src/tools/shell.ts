@@ -26,50 +26,54 @@ function isRunCommandArgs(value: unknown): value is RunCommandArgs {
   return Array.isArray(command) && command.every((item) => typeof item === 'string');
 }
 
-export const runCommandTool: Tool = {
-  name: 'run_command',
-  description:
-    'Run a command inside the working directory. Provide the executable and its arguments as separate array elements, never as a shell string. Requires user confirmation.',
-  parameters: {
-    type: 'object',
-    properties: {
-      command: {
-        type: 'array',
-        items: { type: 'string' },
-        description: 'The executable followed by its arguments, e.g. ["ls", "-la"].',
+export function createRunCommandTool(timeoutMs: number): Tool {
+  return {
+    name: 'run_command',
+    description:
+      'Run a command inside the working directory. Provide the executable and its arguments as separate array elements, never as a shell string. Requires user confirmation.',
+    parameters: {
+      type: 'object',
+      properties: {
+        command: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'The executable followed by its arguments, e.g. ["ls", "-la"].',
+        },
       },
+      required: ['command'],
+      additionalProperties: false,
     },
-    required: ['command'],
-    additionalProperties: false,
-  },
-  risk: 'confirm',
-  async run(args: unknown, ctx: ToolContext): Promise<string> {
-    if (!isRunCommandArgs(args)) {
-      throw new Error('Expected an object with a "command" field: an array of strings.');
-    }
-    const [executable, ...commandArgs] = args.command;
-    if (!executable) {
-      throw new Error('The "command" array must contain at least one element (the executable).');
-    }
+    risk: 'confirm',
+    async run(args: unknown, ctx: ToolContext): Promise<string> {
+      if (!isRunCommandArgs(args)) {
+        throw new Error('Expected an object with a "command" field: an array of strings.');
+      }
+      const [executable, ...commandArgs] = args.command;
+      if (!executable) {
+        throw new Error('The "command" array must contain at least one element (the executable).');
+      }
 
-    const summary = `run_command ${JSON.stringify(args.command)}`;
-    const detail = `argv: ${JSON.stringify(args.command)}\ncwd: ${ctx.workingDir}\ntimeout: ${DEFAULT_TIMEOUT_MS}ms`;
+      const summary = `run_command ${JSON.stringify(args.command)}`;
+      const detail = `argv: ${JSON.stringify(args.command)}\ncwd: ${ctx.workingDir}\ntimeout: ${timeoutMs}ms`;
 
-    const approved = await ctx.confirm(summary, detail);
-    if (!approved) {
-      return `The user declined to run ${JSON.stringify(args.command)}. It was not executed.`;
-    }
+      const approved = await ctx.confirm(summary, detail);
+      if (!approved) {
+        return `The user declined to run ${JSON.stringify(args.command)}. It was not executed.`;
+      }
 
-    return runProcess(executable, commandArgs, ctx);
-  },
-};
+      return runProcess(executable, commandArgs, ctx, timeoutMs);
+    },
+  };
+}
 
-function runProcess(executable: string, args: string[], ctx: ToolContext): Promise<string> {
+export const runCommandTool: Tool = createRunCommandTool(DEFAULT_TIMEOUT_MS);
+
+function runProcess(executable: string, args: string[], ctx: ToolContext, timeoutMs: number): Promise<string> {
   return new Promise((resolve, reject) => {
     const child = spawn(executable, args, {
       cwd: ctx.workingDir,
       env: buildSafeEnv(),
-      timeout: DEFAULT_TIMEOUT_MS,
+      timeout: timeoutMs,
       signal: ctx.signal,
     });
 
