@@ -86,6 +86,11 @@ async function executeToolCall(
   try {
     return { content: truncate(await tool.run(args, ctx)), ok: true };
   } catch (cause) {
+    // A user-cancelled turn (Ctrl-C during the tool or a pending confirmation)
+    // must abort the whole turn, not come back as a tool result the model sees.
+    if (cause instanceof Error && cause.name === 'AbortError') {
+      throw cause;
+    }
     const message = cause instanceof Error ? cause.message : String(cause);
     return { content: `Error: ${message}`, ok: false };
   }

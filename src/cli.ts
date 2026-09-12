@@ -4,6 +4,7 @@ import { stdin, stdout } from 'node:process';
 import { createOpenAiCompatProvider, type OpenAiCompatConfig } from './providers/openai-compat.js';
 import { LoopLimitError, StuckLoopError, runTurn } from './loop.js';
 import { tools } from './tools/index.js';
+import { createConfirm } from './ui/prompt.js';
 import type { Message } from './providers/types.js';
 import type { ToolContext } from './tools/types.js';
 
@@ -50,7 +51,7 @@ async function main(): Promise<void> {
   const history: Message[] = [{ role: 'system', content: SYSTEM_PROMPT_TEMPLATE(workingDir) }];
   const rl = createInterface({ input: stdin, output: stdout });
 
-  console.log('marmota (phase 1) -- type a message. Ctrl-C cancels a turn, Ctrl-D exits.');
+  console.log('marmota -- type a message. Ctrl-C cancels a turn, Ctrl-D exits.');
 
   while (true) {
     let input: string;
@@ -70,10 +71,7 @@ async function main(): Promise<void> {
     const ctx: ToolContext = {
       workingDir,
       signal: controller.signal,
-      // No confirm-risk tools exist yet in phase 1; nothing calls this.
-      async confirm(): Promise<boolean> {
-        return true;
-      },
+      confirm: createConfirm(rl, controller.signal),
     };
 
     try {

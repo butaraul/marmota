@@ -1,7 +1,8 @@
-import { listFilesTool } from './fs.js';
+import { listFilesTool, readFileTool, writeFileTool } from './fs.js';
+import { runCommandTool } from './shell.js';
 import type { JSONSchema, Tool } from './types.js';
 
-export const tools: Tool[] = [listFilesTool];
+export const tools: Tool[] = [listFilesTool, readFileTool, writeFileTool, runCommandTool];
 
 export class ToolValidationError extends Error {}
 
