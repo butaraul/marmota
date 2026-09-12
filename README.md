@@ -1,3 +1,5 @@
+![marmota_logo_mark_and_wordmark 20 32 13](https://github.com/user-attachments/assets/1ac11c9f-a62b-4725-bb38-a53fa464e284)
+
 marmota is a command-line AI agent runtime that runs entirely on your own
 machine, built on the assumption that everything the agent reads is
 potentially hostile.
