@@ -27,7 +27,7 @@ Fixed it -- `end` was including one extra item past the page boundary.
 ## Install
 
 ```
-git clone <this repository> marmota && cd marmota
+git clone https://github.com/butaraul/marmota marmota && cd marmota
 npm install && npm run build
 npm link   # exposes `marmota` globally; or run `node dist/cli.js` directly
 ```
