@@ -92,12 +92,11 @@ async function buildModelOptions(catalogue: Catalogue): Promise<Array<SelectOpti
       console.log('(Ollama not detected -- install it from https://ollama.com/download to also use local models.)\n');
     } else {
       for (const name of installed) {
-        options.push({ label: `${name} (local, installed)`, hint: 'already installed', value: { kind: 'ollama-installed', provider: ollama, name } });
+        options.push({ label: `${name} (installed)`, value: { kind: 'ollama-installed', provider: ollama, name } });
       }
       for (const m of ollama.suggestedPulls ?? []) {
         options.push({
-          label: `${m.label} (local, download)`,
-          ...(m.note ? { hint: m.note } : {}),
+          label: `${m.label} (download)`,
           value: { kind: 'ollama-download', provider: ollama, id: m.id, label: m.label },
         });
       }
@@ -106,11 +105,7 @@ async function buildModelOptions(catalogue: Catalogue): Promise<Array<SelectOpti
 
   for (const provider of catalogue.providers.filter((p) => p.id !== 'ollama')) {
     for (const m of provider.models) {
-      options.push({
-        label: `${m.label} (${provider.label})`,
-        ...(m.note ? { hint: m.note } : {}),
-        value: { kind: 'hosted', provider, id: m.id },
-      });
+      options.push({ label: `${m.label} (${provider.label})`, value: { kind: 'hosted', provider, id: m.id } });
     }
   }
 

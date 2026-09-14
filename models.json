@@ -24,7 +24,7 @@
     },
     {
       "id": "groq",
-      "label": "Groq -- free tier, very fast",
+      "label": "Groq",
       "needsKey": true,
       "keyUrl": "https://console.groq.com/keys",
       "baseUrl": "https://api.groq.com/openai/v1",
@@ -49,7 +49,7 @@
     },
     {
       "id": "openrouter",
-      "label": "OpenRouter -- free tier, no card required",
+      "label": "OpenRouter",
       "needsKey": true,
       "keyUrl": "https://openrouter.ai/keys",
       "baseUrl": "https://openrouter.ai/api/v1",
