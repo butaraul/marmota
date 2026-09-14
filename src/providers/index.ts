@@ -1,3 +1,4 @@
+import { spawn } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -22,6 +23,8 @@ export interface CatalogueProvider {
   keyUrl?: string;
   detect?: string;
   models: CatalogueModel[];
+  /** Models this provider can download on request (currently only meaningful for Ollama). */
+  suggestedPulls?: CatalogueModel[];
 }
 
 export interface Catalogue {
@@ -62,6 +65,26 @@ export async function detectOllamaModels(detectUrl: string): Promise<string[] | 
   }
 }
 
+/**
+ * Runs `ollama pull <modelId>` with inherited stdio so its own progress bar
+ * renders directly in the user's terminal. Throws with a clear message on a
+ * missing `ollama` binary or a non-zero exit.
+ */
+export function pullOllamaModel(modelId: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const child = spawn('ollama', ['pull', modelId], { stdio: 'inherit' });
+
+    child.on('error', (error) => {
+      reject(new Error(`Could not run "ollama pull ${modelId}": ${error.message}`));
+    });
+
+    child.on('close', (code) => {
+      if (code === 0) resolve();
+      else reject(new Error(`"ollama pull ${modelId}" exited with code ${code ?? 'null'}.`));
+    });
+  });
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
@@ -84,11 +107,14 @@ function parseCatalogue(raw: string, source: string): Catalogue {
 
 function toCatalogueProvider(value: unknown, at: string): CatalogueProvider {
   if (!isRecord(value)) throw new Error(`${at} must be an object.`);
-  const { id, label, needsKey, baseUrl, keyUrl, detect, models } = value;
+  const { id, label, needsKey, baseUrl, keyUrl, detect, models, suggestedPulls } = value;
   if (typeof id !== 'string' || typeof label !== 'string' || typeof needsKey !== 'boolean' || typeof baseUrl !== 'string') {
     throw new Error(`${at} is missing a required string/boolean field (id, label, needsKey, baseUrl).`);
   }
   if (!Array.isArray(models)) throw new Error(`${at}.models must be an array.`);
+  if (suggestedPulls !== undefined && !Array.isArray(suggestedPulls)) {
+    throw new Error(`${at}.suggestedPulls must be an array.`);
+  }
   return {
     id,
     label,
@@ -97,6 +123,9 @@ function toCatalogueProvider(value: unknown, at: string): CatalogueProvider {
     ...(typeof keyUrl === 'string' ? { keyUrl } : {}),
     ...(typeof detect === 'string' ? { detect } : {}),
     models: models.map((model, i) => toCatalogueModel(model, `${at}.models[${i}]`)),
+    ...(suggestedPulls
+      ? { suggestedPulls: suggestedPulls.map((model, i) => toCatalogueModel(model, `${at}.suggestedPulls[${i}]`)) }
+      : {}),
   };
 }
 

@@ -2,7 +2,7 @@ import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { CONFIG_VERSION, configPath, saveApiKey, saveConfig } from './config.js';
 import type { Config } from './config.js';
-import { detectOllamaModels, loadCatalogue, validateApiKey } from './providers/index.js';
+import { detectOllamaModels, loadCatalogue, pullOllamaModel, validateApiKey } from './providers/index.js';
 import type { CatalogueProvider } from './providers/index.js';
 import { confirmYesNo, promptSecret, promptText } from './ui/prompt.js';
 import { selectOne } from './ui/select.js';
@@ -30,10 +30,10 @@ export async function runSetupWizard(): Promise<void> {
     if (!ollama) {
       throw new Error('The model catalogue has no "ollama" entry -- it may be corrupt. Check models.json.');
     }
-    const found = await probeOllama(ollama);
-    if (!found) return;
+    const chosen = await chooseOllamaModel(ollama);
+    if (!chosen) return;
     provider = ollama;
-    model = await selectOne('Which installed model?', found.map((name) => ({ label: name, value: name })));
+    model = chosen;
   } else {
     provider = await selectOne('Which provider?', hostedProviders.map((p) => ({ label: p.label, value: p })));
     model = await selectOne(
@@ -68,27 +68,55 @@ export async function runSetupWizard(): Promise<void> {
   console.log(`\nSetup complete. Config written to ${configPath()}.`);
 }
 
-/** Returns installed model names, or undefined if Ollama couldn't be reached (already reported to the user). */
-async function probeOllama(ollama: CatalogueProvider): Promise<string[] | undefined> {
+type OllamaChoice = { kind: 'installed'; name: string } | { kind: 'download'; id: string; label: string };
+
+/**
+ * Lets the user pick an already-installed model or one to download from the
+ * catalogue's suggested list, pulling it live if so. Returns undefined if
+ * Ollama couldn't be reached, or there was truly nothing to offer -- both
+ * already reported to the user.
+ */
+async function chooseOllamaModel(ollama: CatalogueProvider): Promise<string | undefined> {
   if (!ollama.detect) {
     throw new Error('The catalogue\'s "ollama" entry has no "detect" URL -- it may be corrupt.');
   }
 
-  const models = await detectOllamaModels(ollama.detect);
-  if (models === undefined) {
+  const installed = await detectOllamaModels(ollama.detect);
+  if (installed === undefined) {
     console.log(`\nCould not reach Ollama (checked ${ollama.detect}).`);
-    console.log('Install it from https://ollama.com/download, then pull a model, e.g.:');
-    console.log('  ollama pull llama3.2');
-    console.log('Run `marmota setup` again once it is running.');
+    console.log('Install it from https://ollama.com/download, then run `marmota setup` again.');
     return undefined;
   }
-  if (models.length === 0) {
-    console.log('\nOllama is running but has no models installed yet.');
-    console.log('Pull one first, e.g.: ollama pull llama3.2');
+
+  const downloadable = ollama.suggestedPulls ?? [];
+  const options = [
+    ...installed.map((name) => ({ label: name, hint: 'already installed', value: { kind: 'installed', name } as OllamaChoice })),
+    ...downloadable.map((m) => ({
+      label: `Download ${m.label}`,
+      ...(m.note ? { hint: m.note } : {}),
+      value: { kind: 'download', id: m.id, label: m.label } as OllamaChoice,
+    })),
+  ];
+
+  if (options.length === 0) {
+    console.log('\nOllama is running but has no models installed, and none are suggested for download.');
+    console.log('Pull one yourself, e.g.: ollama pull llama3.2');
     console.log('Run `marmota setup` again once you have.');
     return undefined;
   }
-  return models;
+
+  const choice = await selectOne('Which model?', options);
+  if (choice.kind === 'installed') return choice.name;
+
+  console.log(`\nDownloading ${choice.label} (${choice.id}) via \`ollama pull\` -- this can take a while.`);
+  try {
+    await pullOllamaModel(choice.id);
+  } catch (error) {
+    console.log(`\n${error instanceof Error ? error.message : String(error)}`);
+    return undefined;
+  }
+  console.log(`Downloaded ${choice.id}.`);
+  return choice.id;
 }
 
 /** Prompts for a key and validates it with a cheap request, looping on failure until the user gives up. */

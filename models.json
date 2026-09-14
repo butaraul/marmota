@@ -7,7 +7,20 @@
       "needsKey": false,
       "baseUrl": "http://localhost:11434/v1",
       "detect": "http://localhost:11434/api/tags",
-      "models": []
+      "models": [],
+      "verifiedAt": "2026-09-14",
+      "suggestedPulls": [
+        {
+          "id": "granite4.1:3b",
+          "label": "Granite 4.1 3B",
+          "note": "good default -- ~2.1GB, verified tool-calling support"
+        },
+        {
+          "id": "granite4.1:8b",
+          "label": "Granite 4.1 8B",
+          "note": "stronger, slower -- ~5.3GB, verified tool-calling support"
+        }
+      ]
     },
     {
       "id": "groq",
