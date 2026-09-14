@@ -87,6 +87,31 @@ export function startThinking(): () => void {
   };
 }
 
+const SLEEPING_MARMOT = '(-ω-)zZ';
+
+function promptBoxWidth(): number {
+  return Math.max(20, Math.min(stdout.columns ?? 60, 100));
+}
+
+/** Top border of the input prompt box -- a sleeping marmot dozing on the rule. Empty string when color is off. */
+export function renderPromptTop(): string {
+  if (!colorEnabled()) return '';
+  const label = ` ${SLEEPING_MARMOT} `;
+  const dashes = Math.max(1, promptBoxWidth() - label.length - 1);
+  return gold('╭─') + cream(label) + gold('─'.repeat(dashes) + '╮');
+}
+
+/** Bottom border of the input prompt box, printed once the user's line is submitted. Empty string when color is off. */
+export function renderPromptBottom(): string {
+  if (!colorEnabled()) return '';
+  return gold('╰' + '─'.repeat(promptBoxWidth()) + '╯');
+}
+
+/** The `> ` prompt readline itself prints, left-bordered to match the box. */
+export function renderPromptLabel(): string {
+  return colorEnabled() ? `${gold('│')} ${gold('❯')} ` : '> ';
+}
+
 /** Styled `-> tool_name {...}` line for a tool call. */
 export function renderToolCall(name: string, args: unknown): string {
   if (!colorEnabled()) {
