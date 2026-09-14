@@ -11,6 +11,7 @@ import { runSetupWizard } from './setup.js';
 import { buildTools } from './tools/index.js';
 import { runUninstall } from './uninstall.js';
 import { createConfirm } from './ui/prompt.js';
+import { renderBanner, renderToolCall, startThinking } from './ui/render.js';
 import type { Config } from './config.js';
 import type { Message } from './providers/types.js';
 import type { ToolContext } from './tools/types.js';
@@ -133,7 +134,7 @@ async function runInteractiveSession(options: { resume: boolean; yolo: boolean }
   const tools = buildTools(config.commandTimeoutMs);
   const rl = createInterface({ input: stdin, output: stdout });
 
-  console.log('marmota -- type a message. Ctrl-C cancels a turn, Ctrl-D exits.');
+  console.log(renderBanner({ provider: config.provider, model: config.model, workingDir: config.workingDir }));
 
   while (true) {
     let input: string;
@@ -156,6 +157,7 @@ async function runInteractiveSession(options: { resume: boolean; yolo: boolean }
       confirm: options.yolo ? async (): Promise<boolean> => true : createConfirm(rl, controller.signal),
     };
 
+    let stopThinking: (() => void) | undefined;
     try {
       const reply = await runTurn(trimmed, {
         provider,
@@ -164,8 +166,15 @@ async function runInteractiveSession(options: { resume: boolean; yolo: boolean }
         ctx,
         maxIterations: config.maxIterations,
         events: {
+          onThinkingStart() {
+            stopThinking = startThinking();
+          },
+          onThinkingStop() {
+            stopThinking?.();
+            stopThinking = undefined;
+          },
           onToolCall(call) {
-            console.log(`\x1b[2m→ ${call.name} ${JSON.stringify(call.args)}\x1b[0m`);
+            console.log(renderToolCall(call.name, call.args));
           },
         },
       });

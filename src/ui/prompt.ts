@@ -2,18 +2,7 @@ import { emitKeypressEvents } from 'node:readline';
 import { createInterface } from 'node:readline/promises';
 import { stdin, stdout } from 'node:process';
 import type { Interface } from 'node:readline/promises';
-
-export function colorEnabled(): boolean {
-  return stdout.isTTY === true && !process.env['NO_COLOR'];
-}
-
-export function dim(text: string): string {
-  return colorEnabled() ? `\x1b[2m${text}\x1b[0m` : text;
-}
-
-export function bold(text: string): string {
-  return colorEnabled() ? `\x1b[1m${text}\x1b[0m` : text;
-}
+import { renderConfirmBlock } from './render.js';
 
 export function isInteractive(): boolean {
   return stdin.isTTY === true && stdout.isTTY === true;
@@ -62,8 +51,7 @@ export async function nextFallbackLine(prompt: string): Promise<string> {
  */
 export function createConfirm(rl: Interface, signal: AbortSignal): (summary: string, detail: string) => Promise<boolean> {
   return async (summary: string, detail: string): Promise<boolean> => {
-    const rule = dim('-'.repeat(60));
-    console.log(`\n${rule}\n${bold(summary)}\n${detail}\n${rule}`);
+    console.log(renderConfirmBlock(summary, detail));
 
     const answer = await rl.question('Proceed? [y/N] ', { signal });
     const normalized = answer.trim().toLowerCase();

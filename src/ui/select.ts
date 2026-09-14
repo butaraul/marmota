@@ -1,6 +1,7 @@
 import { cursorTo, emitKeypressEvents, moveCursor } from 'node:readline';
 import { stdin, stdout } from 'node:process';
-import { abortError, bold, dim, isInteractive, nextFallbackLine } from './prompt.js';
+import { abortError, isInteractive, nextFallbackLine } from './prompt.js';
+import { bold, dim } from './render.js';
 
 export interface SelectOption<T> {
   label: string;

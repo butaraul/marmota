@@ -12,6 +12,9 @@ export class StuckLoopError extends Error {}
 export interface LoopEvents {
   onToolCall?(call: ToolCall): void;
   onToolResult?(call: ToolCall, result: string, ok: boolean): void;
+  /** Called immediately before/after each model call, so the CLI can show a "thinking" indicator. */
+  onThinkingStart?(): void;
+  onThinkingStop?(): void;
 }
 
 export interface RunTurnOptions {
@@ -37,7 +40,13 @@ export async function runTurn(userMessage: string, options: RunTurnOptions): Pro
   let repeatCount = 0;
 
   for (let iteration = 0; iteration < maxIterations; iteration++) {
-    const reply: ModelReply = await provider.chat(history, tools, ctx.signal);
+    events?.onThinkingStart?.();
+    let reply: ModelReply;
+    try {
+      reply = await provider.chat(history, tools, ctx.signal);
+    } finally {
+      events?.onThinkingStop?.();
+    }
 
     if (reply.kind === 'text') {
       history.push({ role: 'assistant', content: reply.text });
