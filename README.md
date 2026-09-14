@@ -42,10 +42,12 @@ is the real install path.
 marmota setup
 ```
 
-The wizard asks whether to use a local model (via [Ollama](https://ollama.com))
-or a hosted one (Groq or OpenRouter, both with a free tier), gets an API key
-if needed and validates it with a live request before saving, and picks a
-working directory -- the only place the agent will ever read, write, or run
+The wizard asks whether to use a local model (via [Ollama](https://ollama.com)
+-- if you already have one pulled it's listed, otherwise pick one to
+download and it runs `ollama pull` for you) or a hosted one (Groq or
+OpenRouter, both with a free tier), gets an API key if needed and validates
+it with a live request before saving, and picks a working directory -- the
+only place the agent will ever read, write, or run
 commands. Then:
 
 ```
