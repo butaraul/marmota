@@ -11,7 +11,7 @@ import { runSetupWizard } from './setup.js';
 import { buildTools } from './tools/index.js';
 import { runUninstall } from './uninstall.js';
 import { createConfirm } from './ui/prompt.js';
-import { renderBanner, renderPromptBottom, renderPromptLabel, renderPromptTop, renderToolCall, startThinking } from './ui/render.js';
+import { renderBanner, renderToolCall, startThinking } from './ui/render.js';
 import type { Config } from './config.js';
 import type { Message } from './providers/types.js';
 import type { ToolContext } from './tools/types.js';
@@ -137,18 +137,12 @@ async function runInteractiveSession(options: { resume: boolean; yolo: boolean }
   console.log(renderBanner({ provider: config.provider, model: config.model, workingDir: config.workingDir }));
 
   while (true) {
-    const top = renderPromptTop();
-    if (top) console.log(top);
-
     let input: string;
     try {
-      input = await rl.question(renderPromptLabel());
+      input = await rl.question('> ');
     } catch {
       break;
     }
-
-    const bottom = renderPromptBottom();
-    if (bottom) console.log(bottom);
 
     const trimmed = input.trim();
     if (trimmed.length === 0) continue;
